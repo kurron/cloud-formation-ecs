@@ -52,6 +52,11 @@ Parameters:
         Type: 'String'
         Default: 'subnet-ddad6394'
 
+    PrivateSubnetZoneA:
+        Description: 'Private subnet ID to place the ECS instance into'
+        Type: 'String'
+        Default: 'subnet-dcad6395'
+
     SecurityGroup:
         Description: 'Security Group to place around the ECS instances'
         Type: 'String'
@@ -78,7 +83,7 @@ Resources:
             # cluster names must adhere to this expression: ^[a-zA-Z0-9\-_]{1,255}$
             ClusterName: !Join [ '-', [ !Ref 'AWS::StackName', 'Cluster' ] ]
 
-    # create an ECS optimized EC2 instance into Zone A
+    # create a public ECS optimized EC2 instance into Zone A
     InstancePublicZoneA:
         Type: AWS::EC2::Instance
         Properties:
@@ -124,6 +129,53 @@ Resources:
                     #!/bin/bash -xe
                     echo ECS_CLUSTER=${Cluster} >> /etc/ecs/ecs.config
 
+    # create a private ECS optimized EC2 instance into Zone A
+    InstancePrivateZoneA:
+        Type: AWS::EC2::Instance
+        Properties:
+            EbsOptimized: false
+            IamInstanceProfile:
+                Ref: 'ECSRole'
+            ImageId:
+                Fn::FindInMap:
+                    - RegionToAmazonAMI
+                    - Ref: 'AWS::Region'
+                    - HVM64
+            InstanceInitiatedShutdownBehavior:  stop
+            InstanceType:
+                Ref: 'InstanceType'
+            KeyName:
+                Ref: 'SshKeyName'
+            Monitoring: False
+            SecurityGroupIds:
+                - !Ref 'SecurityGroup'
+            SourceDestCheck: true
+            SubnetId:
+                Ref: 'PrivateSubnetZoneA'
+            Tenancy: default
+            Tags:
+                - Key: 'Name'
+                  Value:
+                      'Fn::Join': [ ':', [ 'ECS', 'Private Zone A', !Ref 'AWS::StackName' ] ]
+                - Key: 'Project'
+                  Value:
+                      Ref: 'Project'
+                - Key: 'Purpose'
+                  Value: 'Docker'
+                - Key: 'Creator'
+                  Value:
+                      Ref: 'Creator'
+                - Key: 'Environment'
+                  Value:
+                      Ref: 'Environment'
+                - Key: 'Freetext'
+                  Value: 'Runs ECS Agent and Docker'
+            UserData:
+                Fn::Base64: !Sub |
+                    #!/bin/bash -xe
+                    echo ECS_CLUSTER=${Cluster} >> /etc/ecs/ecs.config
+
+
 Outputs:
     Cluster:
         Description: 'EC2 Container Service Cluster ID'
@@ -131,3 +183,13 @@ Outputs:
             Ref: 'Cluster'
         Export:
             Name: !Join [ ':', [ !Ref 'AWS::StackName', Cluster ] ]
+    PublicEcsAddressA:
+        Description: 'Public IP address of the zone A ECS instance'
+        Value: !GetAtt InstancePublicZoneA.PublicIp
+        Export:
+            Name: !Join [ ':', [ !Ref 'AWS::StackName', PublicEcsAddressA ] ]
+    PrivateEcsAddressA:
+        Description: 'Private IP address of the zone A ECS instance'
+        Value: !GetAtt InstancePublicZoneA.PrivateIp
+        Export:
+            Name: !Join [ ':', [ !Ref 'AWS::StackName', PrivateEcsAddressA ] ]
