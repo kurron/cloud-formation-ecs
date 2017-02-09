@@ -57,6 +57,16 @@ Parameters:
         Type: 'String'
         Default: 'subnet-dcad6395'
 
+    PublicSubnetZoneB:
+        Description: 'Public subnet ID to place the ECS instance into'
+        Type: 'String'
+        Default: 'subnet-9bbe0afc'
+
+    PrivateSubnetZoneB:
+        Description: 'Private subnet ID to place the ECS instance into'
+        Type: 'String'
+        Default: 'subnet-9abe0afd'
+
     SecurityGroup:
         Description: 'Security Group to place around the ECS instances'
         Type: 'String'
@@ -175,6 +185,98 @@ Resources:
                     #!/bin/bash -xe
                     echo ECS_CLUSTER=${Cluster} >> /etc/ecs/ecs.config
 
+    # create a public ECS optimized EC2 instance into Zone B
+    InstancePublicZoneB:
+        Type: AWS::EC2::Instance
+        Properties:
+            EbsOptimized: false
+            IamInstanceProfile:
+                Ref: 'ECSRole'
+            ImageId:
+                Fn::FindInMap:
+                    - RegionToAmazonAMI
+                    - Ref: 'AWS::Region'
+                    - HVM64
+            InstanceInitiatedShutdownBehavior:  stop
+            InstanceType:
+                Ref: 'InstanceType'
+            KeyName:
+                Ref: 'SshKeyName'
+            Monitoring: False
+            SecurityGroupIds:
+                - !Ref 'SecurityGroup'
+            SourceDestCheck: true
+            SubnetId:
+                Ref: 'PublicSubnetZoneB'
+            Tenancy: default
+            Tags:
+                - Key: 'Name'
+                  Value:
+                      'Fn::Join': [ ':', [ 'ECS', 'Public Zone B', !Ref 'AWS::StackName' ] ]
+                - Key: 'Project'
+                  Value:
+                      Ref: 'Project'
+                - Key: 'Purpose'
+                  Value: 'Docker'
+                - Key: 'Creator'
+                  Value:
+                      Ref: 'Creator'
+                - Key: 'Environment'
+                  Value:
+                      Ref: 'Environment'
+                - Key: 'Freetext'
+                  Value: 'Runs ECS Agent and Docker'
+            UserData:
+                Fn::Base64: !Sub |
+                    #!/bin/bash -xe
+                    echo ECS_CLUSTER=${Cluster} >> /etc/ecs/ecs.config
+
+    # create a private ECS optimized EC2 instance into Zone B
+    InstancePrivateZoneB:
+        Type: AWS::EC2::Instance
+        Properties:
+            EbsOptimized: false
+            IamInstanceProfile:
+                Ref: 'ECSRole'
+            ImageId:
+                Fn::FindInMap:
+                    - RegionToAmazonAMI
+                    - Ref: 'AWS::Region'
+                    - HVM64
+            InstanceInitiatedShutdownBehavior:  stop
+            InstanceType:
+                Ref: 'InstanceType'
+            KeyName:
+                Ref: 'SshKeyName'
+            Monitoring: False
+            SecurityGroupIds:
+                - !Ref 'SecurityGroup'
+            SourceDestCheck: true
+            SubnetId:
+                Ref: 'PrivateSubnetZoneB'
+            Tenancy: default
+            Tags:
+                - Key: 'Name'
+                  Value:
+                      'Fn::Join': [ ':', [ 'ECS', 'Private Zone B', !Ref 'AWS::StackName' ] ]
+                - Key: 'Project'
+                  Value:
+                      Ref: 'Project'
+                - Key: 'Purpose'
+                  Value: 'Docker'
+                - Key: 'Creator'
+                  Value:
+                      Ref: 'Creator'
+                - Key: 'Environment'
+                  Value:
+                      Ref: 'Environment'
+                - Key: 'Freetext'
+                  Value: 'Runs ECS Agent and Docker'
+            UserData:
+                Fn::Base64: !Sub |
+                    #!/bin/bash -xe
+                    echo ECS_CLUSTER=${Cluster} >> /etc/ecs/ecs.config
+
 
 Outputs:
     Cluster:
@@ -193,3 +295,13 @@ Outputs:
         Value: !GetAtt InstancePublicZoneA.PrivateIp
         Export:
             Name: !Join [ ':', [ !Ref 'AWS::StackName', PrivateEcsAddressA ] ]
+    PublicEcsAddressB:
+        Description: 'Public IP address of the zone B ECS instance'
+        Value: !GetAtt InstancePublicZoneB.PublicIp
+        Export:
+            Name: !Join [ ':', [ !Ref 'AWS::StackName', PublicEcsAddressB ] ]
+    PrivateEcsAddressB:
+        Description: 'Private IP address of the zone B ECS instance'
+        Value: !GetAtt InstancePublicZoneB.PrivateIp
+        Export:
+            Name: !Join [ ':', [ !Ref 'AWS::StackName', PrivateEcsAddressB ] ]
