@@ -37,16 +37,38 @@ Parameters:
         Type: 'String'
         Default: 'asgard-lite-test'
 
+    InstanceType:
+        Description: 'How large of a box to run your containers on'
+        Type: 'String'
+        Default: 't2.micro'
+
+    ECSRole:
+        Description: 'IAM Role to launch the EC2 instances with'
+        Type: 'String'
+        Default: 'ecsInstanceRole'
+
+    PublicSubnetZoneA:
+        Description: 'Public subnet ID to place the ECS instance into'
+        Type: 'String'
+        Default: 'subnet-ddad6394'
+
+    SecurityGroup:
+        Description: 'Security Group to place around the ECS instances'
+        Type: 'String'
+        Default: 'sg-f748298f'
+
+
 Mappings:
+    # these AMIs change regularly.  Check http://docs.aws.amazon.com/AmazonECS/latest/developerguide/ecs-optimized_AMI.html
     RegionToAmazonAMI:
         us-east-1:
-            HVM64: ami-0b33d91d
+            HVM64: ami-b2df2ca4
         us-east-2:
-            HVM64: ami-c55673a0
+            HVM64: ami-832b0ee6
         us-west-1:
-            HVM64: ami-165a0876
+            HVM64: ami-dd104dbd
         us-west-2:
-            HVM64: ami-f173cc91
+            HVM64: ami-022b9262
 
 Resources:
     # Create the cluster
@@ -55,6 +77,52 @@ Resources:
         Properties:
             # cluster names must adhere to this expression: ^[a-zA-Z0-9\-_]{1,255}$
             ClusterName: !Join [ '-', [ !Ref 'AWS::StackName', 'Cluster' ] ]
+
+    # create an ECS optimized EC2 instance into Zone A
+    InstancePublicZoneA:
+        Type: AWS::EC2::Instance
+        Properties:
+            EbsOptimized: false
+            IamInstanceProfile:
+                Ref: 'ECSRole'
+            ImageId:
+                Fn::FindInMap:
+                    - RegionToAmazonAMI
+                    - Ref: 'AWS::Region'
+                    - HVM64
+            InstanceInitiatedShutdownBehavior:  stop
+            InstanceType:
+                Ref: 'InstanceType'
+            KeyName:
+                Ref: 'SshKeyName'
+            Monitoring: False
+            SecurityGroupIds:
+                - !Ref 'SecurityGroup'
+            SourceDestCheck: true
+            SubnetId:
+                Ref: 'PublicSubnetZoneA'
+            Tenancy: default
+            Tags:
+                - Key: 'Name'
+                  Value:
+                      'Fn::Join': [ ':', [ 'ECS', 'Public Zone A', !Ref 'AWS::StackName' ] ]
+                - Key: 'Project'
+                  Value:
+                      Ref: 'Project'
+                - Key: 'Purpose'
+                  Value: 'Docker'
+                - Key: 'Creator'
+                  Value:
+                      Ref: 'Creator'
+                - Key: 'Environment'
+                  Value:
+                      Ref: 'Environment'
+                - Key: 'Freetext'
+                  Value: 'Runs ECS Agent and Docker'
+            UserData:
+                Fn::Base64: !Sub |
+                    #!/bin/bash -xe
+                    echo ECS_CLUSTER=${Cluster} >> /etc/ecs/ecs.config
 
 Outputs:
     Cluster:
