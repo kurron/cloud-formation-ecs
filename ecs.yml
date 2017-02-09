@@ -284,24 +284,24 @@ Outputs:
         Value:
             Ref: 'Cluster'
         Export:
-            Name: !Join [ ':', [ !Ref 'AWS::StackName', Cluster ] ]
+            Name: 'Cluster'
     PublicEcsAddressA:
         Description: 'Public IP address of the zone A ECS instance'
         Value: !GetAtt InstancePublicZoneA.PublicIp
         Export:
-            Name: !Join [ ':', [ !Ref 'AWS::StackName', PublicEcsAddressA ] ]
+            Name: 'PublicEcsAddressA'
     PrivateEcsAddressA:
         Description: 'Private IP address of the zone A ECS instance'
         Value: !GetAtt InstancePublicZoneA.PrivateIp
         Export:
-            Name: !Join [ ':', [ !Ref 'AWS::StackName', PrivateEcsAddressA ] ]
+            Name: 'PrivateEcsAddressA'
     PublicEcsAddressB:
         Description: 'Public IP address of the zone B ECS instance'
         Value: !GetAtt InstancePublicZoneB.PublicIp
         Export:
-            Name: !Join [ ':', [ !Ref 'AWS::StackName', PublicEcsAddressB ] ]
+            Name: 'PublicEcsAddressB'
     PrivateEcsAddressB:
         Description: 'Private IP address of the zone B ECS instance'
         Value: !GetAtt InstancePublicZoneB.PrivateIp
         Export:
-            Name: !Join [ ':', [ !Ref 'AWS::StackName', PrivateEcsAddressB ] ]
+            Name: 'PrivateEcsAddressB'
