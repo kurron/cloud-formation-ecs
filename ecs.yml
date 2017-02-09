@@ -1,0 +1,65 @@
+---
+# Cannot get this to work for some reason
+#AWSTemplateFormatVersion: AWSTemplateFormatVersion: '2010-09-09'
+
+Description: This template creates a new EC2 Container Service (ECS) into an existing VPC.
+
+Metadata:
+    Foo:
+        Description: 'something clever'
+    Bar:
+        Description: 'something clever'
+
+# These show up in the console and are expected to be provided by the operator
+Parameters:
+    Project:
+        Description: 'Project name this cluster is has been created for'
+        Type: 'String'
+        Default: 'Weapon X'
+
+    Creator:
+        Description: 'Tool or person creating this cluster'
+        Type: 'String'
+        Default: 'CloudFormation'
+
+    Environment:
+        Description: 'Context the cluster will be used in.  Common values are production, testing and development.'
+        Type: 'String'
+        Default: 'development'
+
+    Notes:
+        Description: 'Notes to apply, normally edited in the console.'
+        Type: 'String'
+        Default: 'No notes'
+
+    SshKeyName:
+        Description: 'Name of the key to use when creating the EC2 instances'
+        Type: 'String'
+        Default: 'asgard-lite-test'
+
+Mappings:
+    RegionToAmazonAMI:
+        us-east-1:
+            HVM64: ami-0b33d91d
+        us-east-2:
+            HVM64: ami-c55673a0
+        us-west-1:
+            HVM64: ami-165a0876
+        us-west-2:
+            HVM64: ami-f173cc91
+
+Resources:
+    # Create the cluster
+    Cluster:
+        Type: 'AWS::ECS::Cluster'
+        Properties:
+            # cluster names must adhere to this expression: ^[a-zA-Z0-9\-_]{1,255}$
+            ClusterName: !Join [ '-', [ !Ref 'AWS::StackName', 'Cluster' ] ]
+
+Outputs:
+    Cluster:
+        Description: 'EC2 Container Service Cluster ID'
+        Value:
+            Ref: 'Cluster'
+        Export:
+            Name: !Join [ ':', [ !Ref 'AWS::StackName', Cluster ] ]
