@@ -42,35 +42,30 @@ Parameters:
         Type: 'String'
         Default: 't2.micro'
 
-    ECSRole:
-        Description: 'IAM Role to launch the EC2 instances with'
-        Type: 'String'
-        Default: 'ecsInstanceRole'
-
     PublicSubnetZoneA:
         Description: 'Public subnet ID to place the ECS instance into'
         Type: 'String'
-        Default: 'subnet-ddad6394'
+        Default: 'subnet-32935a7b'
 
     PrivateSubnetZoneA:
         Description: 'Private subnet ID to place the ECS instance into'
         Type: 'String'
-        Default: 'subnet-dcad6395'
+        Default: 'subnet-33935a7a'
 
     PublicSubnetZoneB:
         Description: 'Public subnet ID to place the ECS instance into'
         Type: 'String'
-        Default: 'subnet-9bbe0afc'
+        Default: 'subnet-f7c87f90'
 
     PrivateSubnetZoneB:
         Description: 'Private subnet ID to place the ECS instance into'
         Type: 'String'
-        Default: 'subnet-9abe0afd'
+        Default: 'subnet-f6c87f91'
 
     SecurityGroup:
         Description: 'Security Group to place around the ECS instances'
         Type: 'String'
-        Default: 'sg-f748298f'
+        Default: 'sg-f9264481'
 
 
 Mappings:
@@ -86,6 +81,55 @@ Mappings:
             HVM64: ami-022b9262
 
 Resources:
+    # Role needed by the EC2 instances so they can interact with ECS services
+    AmazonEC2ContainerServiceForEC2Role:
+        Type: 'AWS::IAM::Role'
+        Properties:
+            AssumeRolePolicyDocument:
+                Statement:
+                -
+                    Sid: ""
+                    Effect: "Allow"
+                    Principal:
+                        Service:
+                        - "ec2.amazonaws.com"
+                    Action:
+                    - "sts:AssumeRole"
+            Path: '/'
+            Policies:
+            -
+                PolicyName: "EC2CanContactECSRole"
+                PolicyDocument:
+                    Statement:
+                    -
+                        Effect: "Allow"
+                        Action:
+                            - "ecs:CreateCluster"
+                            - "ecs:DeregisterContainerInstance"
+                            - "ecs:DiscoverPollEndpoint"
+                            - "ecs:Poll"
+                            - "ecs:RegisterContainerInstance"
+                            - "ecs:StartTelemetrySession"
+                            - "ecs:Submit*"
+                            - "ecr:GetAuthorizationToken"
+                            - "ecr:BatchCheckLayerAvailability"
+                            - "ecr:GetDownloadUrlForLayer"
+                            - "ecr:BatchGetImage"
+                            - "logs:CreateLogStream"
+                            - "logs:PutLogEvents"
+                        Resource: "*"
+            # documentation suggests that providing a name will cause issues if updates are needed
+            RoleName: !Join [ '-', [ !Ref 'AWS::StackName', 'AmazonEC2ContainerServiceForEC2Role' ] ]
+
+    # EC2 instances will run using this profile
+    ECSInstanceProfile:
+        Type: "AWS::IAM::InstanceProfile"
+        Properties:
+            Path: "/"
+            Roles:
+            -
+                Ref: "AmazonEC2ContainerServiceForEC2Role"
+
     # Create the cluster
     Cluster:
         Type: 'AWS::ECS::Cluster'
@@ -99,7 +143,7 @@ Resources:
         Properties:
             EbsOptimized: false
             IamInstanceProfile:
-                Ref: 'ECSRole'
+                Ref: 'ECSInstanceProfile'
             ImageId:
                 Fn::FindInMap:
                     - RegionToAmazonAMI
@@ -145,7 +189,7 @@ Resources:
         Properties:
             EbsOptimized: false
             IamInstanceProfile:
-                Ref: 'ECSRole'
+                Ref: 'ECSInstanceProfile'
             ImageId:
                 Fn::FindInMap:
                     - RegionToAmazonAMI
@@ -191,7 +235,7 @@ Resources:
         Properties:
             EbsOptimized: false
             IamInstanceProfile:
-                Ref: 'ECSRole'
+                Ref: 'ECSInstanceProfile'
             ImageId:
                 Fn::FindInMap:
                     - RegionToAmazonAMI
@@ -237,7 +281,7 @@ Resources:
         Properties:
             EbsOptimized: false
             IamInstanceProfile:
-                Ref: 'ECSRole'
+                Ref: 'ECSInstanceProfile'
             ImageId:
                 Fn::FindInMap:
                     - RegionToAmazonAMI
