@@ -45,27 +45,27 @@ Parameters:
     PublicSubnetZoneA:
         Description: 'Public subnet ID to place the ECS instance into'
         Type: 'String'
-        Default: 'subnet-32935a7b'
+        Default: 'subnet-d37ab29a'
 
     PrivateSubnetZoneA:
         Description: 'Private subnet ID to place the ECS instance into'
         Type: 'String'
-        Default: 'subnet-33935a7a'
+        Default: 'subnet-d27ab29b'
 
     PublicSubnetZoneB:
         Description: 'Public subnet ID to place the ECS instance into'
         Type: 'String'
-        Default: 'subnet-f7c87f90'
+        Default: 'subnet-9ae657fd'
 
     PrivateSubnetZoneB:
         Description: 'Private subnet ID to place the ECS instance into'
         Type: 'String'
-        Default: 'subnet-f6c87f91'
+        Default: 'subnet-9be657fc'
 
     SecurityGroup:
         Description: 'Security Group to place around the ECS instances'
         Type: 'String'
-        Default: 'sg-f9264481'
+        Default: 'sg-1b2f4663'
 
 
 Mappings:
@@ -104,6 +104,7 @@ Resources:
                     -
                         Effect: "Allow"
                         Action:
+                            - "ec2:*"
                             - "ecs:CreateCluster"
                             - "ecs:DeregisterContainerInstance"
                             - "ecs:DiscoverPollEndpoint"
@@ -182,6 +183,17 @@ Resources:
                 Fn::Base64: !Sub |
                     #!/bin/bash -xe
                     echo ECS_CLUSTER=${Cluster} >> /etc/ecs/ecs.config
+                    curl -O https://bootstrap.pypa.io/get-pip.py
+                    python get-pip.py --user
+                    export PATH=~/.local/bin:$PATH
+                    pip --version
+                    pip install awscli --upgrade --user
+                    aws --version
+                    AWS_INSTANCE_ID=$( curl http://169.254.169.254/latest/meta-data/instance-id )
+                    echo "AWS_INSTANCE_ID=$AWS_INSTANCE_ID"
+                    ROOT_DISK_ID=$( aws ec2 describe-volumes --region ${AWS::Region} --filter "Name=attachment.instance-id, Values=$AWS_INSTANCE_ID" --query "Volumes[].VolumeId" --out text )
+                    echo "ROOT_DISK_ID=$ROOT_DISK_ID"
+                    aws ec2 create-tags  --region ${AWS::Region} --resources $ROOT_DISK_ID --tags Key=Project,Value='${Project}'
 
     # create a private ECS optimized EC2 instance into Zone A
     InstancePrivateZoneA:
@@ -228,6 +240,17 @@ Resources:
                 Fn::Base64: !Sub |
                     #!/bin/bash -xe
                     echo ECS_CLUSTER=${Cluster} >> /etc/ecs/ecs.config
+                    curl -O https://bootstrap.pypa.io/get-pip.py
+                    python get-pip.py --user
+                    export PATH=~/.local/bin:$PATH
+                    pip --version
+                    pip install awscli --upgrade --user
+                    aws --version
+                    AWS_INSTANCE_ID=$( curl http://169.254.169.254/latest/meta-data/instance-id )
+                    echo "AWS_INSTANCE_ID=$AWS_INSTANCE_ID"
+                    ROOT_DISK_ID=$( aws ec2 describe-volumes --region ${AWS::Region} --filter "Name=attachment.instance-id, Values=$AWS_INSTANCE_ID" --query "Volumes[].VolumeId" --out text )
+                    echo "ROOT_DISK_ID=$ROOT_DISK_ID"
+                    aws ec2 create-tags  --region ${AWS::Region} --resources $ROOT_DISK_ID --tags Key=Project,Value='${Project}'
 
     # create a public ECS optimized EC2 instance into Zone B
     InstancePublicZoneB:
@@ -274,6 +297,17 @@ Resources:
                 Fn::Base64: !Sub |
                     #!/bin/bash -xe
                     echo ECS_CLUSTER=${Cluster} >> /etc/ecs/ecs.config
+                    curl -O https://bootstrap.pypa.io/get-pip.py
+                    python get-pip.py --user
+                    export PATH=~/.local/bin:$PATH
+                    pip --version
+                    pip install awscli --upgrade --user
+                    aws --version
+                    AWS_INSTANCE_ID=$( curl http://169.254.169.254/latest/meta-data/instance-id )
+                    echo "AWS_INSTANCE_ID=$AWS_INSTANCE_ID"
+                    ROOT_DISK_ID=$( aws ec2 describe-volumes --region ${AWS::Region} --filter "Name=attachment.instance-id, Values=$AWS_INSTANCE_ID" --query "Volumes[].VolumeId" --out text )
+                    echo "ROOT_DISK_ID=$ROOT_DISK_ID"
+                    aws ec2 create-tags  --region ${AWS::Region} --resources $ROOT_DISK_ID --tags Key=Project,Value='${Project}'
 
     # create a private ECS optimized EC2 instance into Zone B
     InstancePrivateZoneB:
@@ -320,6 +354,17 @@ Resources:
                 Fn::Base64: !Sub |
                     #!/bin/bash -xe
                     echo ECS_CLUSTER=${Cluster} >> /etc/ecs/ecs.config
+                    curl -O https://bootstrap.pypa.io/get-pip.py
+                    python get-pip.py --user
+                    export PATH=~/.local/bin:$PATH
+                    pip --version
+                    pip install awscli --upgrade --user
+                    aws --version
+                    AWS_INSTANCE_ID=$( curl http://169.254.169.254/latest/meta-data/instance-id )
+                    echo "AWS_INSTANCE_ID=$AWS_INSTANCE_ID"
+                    ROOT_DISK_ID=$( aws ec2 describe-volumes --region ${AWS::Region} --filter "Name=attachment.instance-id, Values=$AWS_INSTANCE_ID" --query "Volumes[].VolumeId" --out text )
+                    echo "ROOT_DISK_ID=$ROOT_DISK_ID"
+                    aws ec2 create-tags  --region ${AWS::Region} --resources $ROOT_DISK_ID --tags Key=Project,Value='${Project}'
 
 
 Outputs:
