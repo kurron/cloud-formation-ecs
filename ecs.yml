@@ -45,27 +45,27 @@ Parameters:
     PublicSubnetZoneA:
         Description: 'Public subnet ID to place the ECS instance into'
         Type: 'String'
-        Default: 'subnet-d37ab29a'
+        Default: 'subnet-e268a3ab'
 
     PrivateSubnetZoneA:
         Description: 'Private subnet ID to place the ECS instance into'
         Type: 'String'
-        Default: 'subnet-d27ab29b'
+        Default: 'subnet-e368a3aa'
 
     PublicSubnetZoneB:
         Description: 'Public subnet ID to place the ECS instance into'
         Type: 'String'
-        Default: 'subnet-9ae657fd'
+        Default: 'subnet-7ffc4c18'
 
     PrivateSubnetZoneB:
         Description: 'Private subnet ID to place the ECS instance into'
         Type: 'String'
-        Default: 'subnet-9be657fc'
+        Default: 'subnet-70fc4c17'
 
     SecurityGroup:
         Description: 'Security Group to place around the ECS instances'
         Type: 'String'
-        Default: 'sg-1b2f4663'
+        Default: 'sg-e6a7cc9e'
 
 
 Mappings:
@@ -138,9 +138,9 @@ Resources:
             # cluster names must adhere to this expression: ^[a-zA-Z0-9\-_]{1,255}$
             ClusterName: !Join [ '-', [ !Ref 'AWS::StackName', 'Cluster' ] ]
 
-    # create a public ECS optimized EC2 instance into Zone A
-    InstancePublicZoneA:
-        Type: AWS::EC2::Instance
+    # auto scaling launch configuration for the ECS servers
+    EcsLaunchConfiguration:
+        Type: AWS::AutoScaling::LaunchConfiguration
         Properties:
             EbsOptimized: false
             IamInstanceProfile:
@@ -150,35 +150,13 @@ Resources:
                     - RegionToAmazonAMI
                     - Ref: 'AWS::Region'
                     - HVM64
-            InstanceInitiatedShutdownBehavior:  stop
+            InstanceMonitoring: false
             InstanceType:
                 Ref: 'InstanceType'
             KeyName:
                 Ref: 'SshKeyName'
-            Monitoring: False
-            SecurityGroupIds:
+            SecurityGroups:
                 - !Ref 'SecurityGroup'
-            SourceDestCheck: true
-            SubnetId:
-                Ref: 'PublicSubnetZoneA'
-            Tenancy: default
-            Tags:
-                - Key: 'Name'
-                  Value:
-                      'Fn::Join': [ ':', [ 'ECS', 'Public Zone A', !Ref 'AWS::StackName' ] ]
-                - Key: 'Project'
-                  Value:
-                      Ref: 'Project'
-                - Key: 'Purpose'
-                  Value: 'Docker'
-                - Key: 'Creator'
-                  Value:
-                      Ref: 'Creator'
-                - Key: 'Environment'
-                  Value:
-                      Ref: 'Environment'
-                - Key: 'Freetext'
-                  Value: 'Runs ECS Agent and Docker'
             UserData:
                 Fn::Base64: !Sub |
                     #!/bin/bash -xe
@@ -195,176 +173,41 @@ Resources:
                     echo "ROOT_DISK_ID=$ROOT_DISK_ID"
                     aws ec2 create-tags  --region ${AWS::Region} --resources $ROOT_DISK_ID --tags Key=Project,Value='${Project}'
 
-    # create a private ECS optimized EC2 instance into Zone A
-    InstancePrivateZoneA:
-        Type: AWS::EC2::Instance
+    # auto scaling group for the ECS servers
+    EcsAutoScalingGroup:
+        Type: AWS::AutoScaling::AutoScalingGroup
         Properties:
-            EbsOptimized: false
-            IamInstanceProfile:
-                Ref: 'ECSInstanceProfile'
-            ImageId:
-                Fn::FindInMap:
-                    - RegionToAmazonAMI
-                    - Ref: 'AWS::Region'
-                    - HVM64
-            InstanceInitiatedShutdownBehavior:  stop
-            InstanceType:
-                Ref: 'InstanceType'
-            KeyName:
-                Ref: 'SshKeyName'
-            Monitoring: False
-            SecurityGroupIds:
-                - !Ref 'SecurityGroup'
-            SourceDestCheck: true
-            SubnetId:
-                Ref: 'PrivateSubnetZoneA'
-            Tenancy: default
+            Cooldown: '120'
+            DesiredCapacity: '4'
+            HealthCheckType: 'EC2'
+            LaunchConfigurationName:
+                Ref: 'EcsLaunchConfiguration'
+            MaxSize: '8'
+            MinSize: '4'
             Tags:
                 - Key: 'Name'
                   Value:
-                      'Fn::Join': [ ':', [ 'ECS', 'Private Zone A', !Ref 'AWS::StackName' ] ]
+                      'Fn::Join': [ ':', [ 'ECS', !Ref 'AWS::StackName' ] ]
+                  PropagateAtLaunch: true
                 - Key: 'Project'
                   Value:
                       Ref: 'Project'
+                  PropagateAtLaunch: true
                 - Key: 'Purpose'
-                  Value: 'Docker'
+                  Value: 'Docker Engine'
+                  PropagateAtLaunch: true
                 - Key: 'Creator'
                   Value:
                       Ref: 'Creator'
+                  PropagateAtLaunch: true
                 - Key: 'Environment'
                   Value:
                       Ref: 'Environment'
+                  PropagateAtLaunch: true
                 - Key: 'Freetext'
                   Value: 'Runs ECS Agent and Docker'
-            UserData:
-                Fn::Base64: !Sub |
-                    #!/bin/bash -xe
-                    echo ECS_CLUSTER=${Cluster} >> /etc/ecs/ecs.config
-                    curl -O https://bootstrap.pypa.io/get-pip.py
-                    python get-pip.py --user
-                    export PATH=~/.local/bin:$PATH
-                    pip --version
-                    pip install awscli --upgrade --user
-                    aws --version
-                    AWS_INSTANCE_ID=$( curl http://169.254.169.254/latest/meta-data/instance-id )
-                    echo "AWS_INSTANCE_ID=$AWS_INSTANCE_ID"
-                    ROOT_DISK_ID=$( aws ec2 describe-volumes --region ${AWS::Region} --filter "Name=attachment.instance-id, Values=$AWS_INSTANCE_ID" --query "Volumes[].VolumeId" --out text )
-                    echo "ROOT_DISK_ID=$ROOT_DISK_ID"
-                    aws ec2 create-tags  --region ${AWS::Region} --resources $ROOT_DISK_ID --tags Key=Project,Value='${Project}'
-
-    # create a public ECS optimized EC2 instance into Zone B
-    InstancePublicZoneB:
-        Type: AWS::EC2::Instance
-        Properties:
-            EbsOptimized: false
-            IamInstanceProfile:
-                Ref: 'ECSInstanceProfile'
-            ImageId:
-                Fn::FindInMap:
-                    - RegionToAmazonAMI
-                    - Ref: 'AWS::Region'
-                    - HVM64
-            InstanceInitiatedShutdownBehavior:  stop
-            InstanceType:
-                Ref: 'InstanceType'
-            KeyName:
-                Ref: 'SshKeyName'
-            Monitoring: False
-            SecurityGroupIds:
-                - !Ref 'SecurityGroup'
-            SourceDestCheck: true
-            SubnetId:
-                Ref: 'PublicSubnetZoneB'
-            Tenancy: default
-            Tags:
-                - Key: 'Name'
-                  Value:
-                      'Fn::Join': [ ':', [ 'ECS', 'Public Zone B', !Ref 'AWS::StackName' ] ]
-                - Key: 'Project'
-                  Value:
-                      Ref: 'Project'
-                - Key: 'Purpose'
-                  Value: 'Docker'
-                - Key: 'Creator'
-                  Value:
-                      Ref: 'Creator'
-                - Key: 'Environment'
-                  Value:
-                      Ref: 'Environment'
-                - Key: 'Freetext'
-                  Value: 'Runs ECS Agent and Docker'
-            UserData:
-                Fn::Base64: !Sub |
-                    #!/bin/bash -xe
-                    echo ECS_CLUSTER=${Cluster} >> /etc/ecs/ecs.config
-                    curl -O https://bootstrap.pypa.io/get-pip.py
-                    python get-pip.py --user
-                    export PATH=~/.local/bin:$PATH
-                    pip --version
-                    pip install awscli --upgrade --user
-                    aws --version
-                    AWS_INSTANCE_ID=$( curl http://169.254.169.254/latest/meta-data/instance-id )
-                    echo "AWS_INSTANCE_ID=$AWS_INSTANCE_ID"
-                    ROOT_DISK_ID=$( aws ec2 describe-volumes --region ${AWS::Region} --filter "Name=attachment.instance-id, Values=$AWS_INSTANCE_ID" --query "Volumes[].VolumeId" --out text )
-                    echo "ROOT_DISK_ID=$ROOT_DISK_ID"
-                    aws ec2 create-tags  --region ${AWS::Region} --resources $ROOT_DISK_ID --tags Key=Project,Value='${Project}'
-
-    # create a private ECS optimized EC2 instance into Zone B
-    InstancePrivateZoneB:
-        Type: AWS::EC2::Instance
-        Properties:
-            EbsOptimized: false
-            IamInstanceProfile:
-                Ref: 'ECSInstanceProfile'
-            ImageId:
-                Fn::FindInMap:
-                    - RegionToAmazonAMI
-                    - Ref: 'AWS::Region'
-                    - HVM64
-            InstanceInitiatedShutdownBehavior:  stop
-            InstanceType:
-                Ref: 'InstanceType'
-            KeyName:
-                Ref: 'SshKeyName'
-            Monitoring: False
-            SecurityGroupIds:
-                - !Ref 'SecurityGroup'
-            SourceDestCheck: true
-            SubnetId:
-                Ref: 'PrivateSubnetZoneB'
-            Tenancy: default
-            Tags:
-                - Key: 'Name'
-                  Value:
-                      'Fn::Join': [ ':', [ 'ECS', 'Private Zone B', !Ref 'AWS::StackName' ] ]
-                - Key: 'Project'
-                  Value:
-                      Ref: 'Project'
-                - Key: 'Purpose'
-                  Value: 'Docker'
-                - Key: 'Creator'
-                  Value:
-                      Ref: 'Creator'
-                - Key: 'Environment'
-                  Value:
-                      Ref: 'Environment'
-                - Key: 'Freetext'
-                  Value: 'Runs ECS Agent and Docker'
-            UserData:
-                Fn::Base64: !Sub |
-                    #!/bin/bash -xe
-                    echo ECS_CLUSTER=${Cluster} >> /etc/ecs/ecs.config
-                    curl -O https://bootstrap.pypa.io/get-pip.py
-                    python get-pip.py --user
-                    export PATH=~/.local/bin:$PATH
-                    pip --version
-                    pip install awscli --upgrade --user
-                    aws --version
-                    AWS_INSTANCE_ID=$( curl http://169.254.169.254/latest/meta-data/instance-id )
-                    echo "AWS_INSTANCE_ID=$AWS_INSTANCE_ID"
-                    ROOT_DISK_ID=$( aws ec2 describe-volumes --region ${AWS::Region} --filter "Name=attachment.instance-id, Values=$AWS_INSTANCE_ID" --query "Volumes[].VolumeId" --out text )
-                    echo "ROOT_DISK_ID=$ROOT_DISK_ID"
-                    aws ec2 create-tags  --region ${AWS::Region} --resources $ROOT_DISK_ID --tags Key=Project,Value='${Project}'
+                  PropagateAtLaunch: true
+            VPCZoneIdentifier: [ !Ref 'PublicSubnetZoneA', !Ref 'PrivateSubnetZoneA', !Ref 'PublicSubnetZoneB', !Ref 'PrivateSubnetZoneB' ]
 
 
 Outputs:
@@ -372,15 +215,3 @@ Outputs:
         Description: 'EC2 Container Service Cluster ID'
         Value:
             Ref: 'Cluster'
-    PublicEcsAddressA:
-        Description: 'Public IP address of the zone A ECS instance'
-        Value: !GetAtt InstancePublicZoneA.PublicIp
-    PrivateEcsAddressA:
-        Description: 'Private IP address of the zone A ECS instance'
-        Value: !GetAtt InstancePublicZoneA.PrivateIp
-    PublicEcsAddressB:
-        Description: 'Public IP address of the zone B ECS instance'
-        Value: !GetAtt InstancePublicZoneB.PublicIp
-    PrivateEcsAddressB:
-        Description: 'Private IP address of the zone B ECS instance'
-        Value: !GetAtt InstancePublicZoneB.PrivateIp
