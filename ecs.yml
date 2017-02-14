@@ -45,7 +45,7 @@ Parameters:
     SpotPrice:
         Description: 'Maximum bid price to place on your EC2 instances'
         Type: 'String'
-        Default: '0.025'
+        Default: '0.05'
 
     PublicSubnetZoneA:
         Description: 'Public subnet ID to place the ECS instance into'
