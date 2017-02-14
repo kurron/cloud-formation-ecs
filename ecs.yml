@@ -40,7 +40,12 @@ Parameters:
     InstanceType:
         Description: 'How large of a box to run your containers on'
         Type: 'String'
-        Default: 't2.micro'
+        Default: 'm4.large'
+
+    SpotPrice:
+        Description: 'Maximum bid price to place on your EC2 instances'
+        Type: 'String'
+        Default: '0.025'
 
     PublicSubnetZoneA:
         Description: 'Public subnet ID to place the ECS instance into'
@@ -157,6 +162,8 @@ Resources:
                 Ref: 'SshKeyName'
             SecurityGroups:
                 - !Ref 'SecurityGroup'
+            SpotPrice:
+                Ref: SpotPrice
             UserData:
                 Fn::Base64: !Sub |
                     #!/bin/bash -xe
@@ -182,8 +189,8 @@ Resources:
             HealthCheckType: 'EC2'
             LaunchConfigurationName:
                 Ref: 'EcsLaunchConfiguration'
-            MaxSize: '8'
-            MinSize: '4'
+            MaxSize: '6'
+            MinSize: '2'
             Tags:
                 - Key: 'Name'
                   Value:
