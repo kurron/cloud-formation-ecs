@@ -34,7 +34,7 @@ Parameters:
 
     SshKeyName:
         Description: 'Name of the key to use when creating the EC2 instances'
-        Type: 'String'
+        Type: 'AWS::EC2::KeyPair::KeyName'
         Default: 'asgard-lite-test'
 
     InstanceType:
@@ -47,31 +47,13 @@ Parameters:
         Type: 'String'
         Default: '0.05'
 
-    PublicSubnetZoneA:
-        Description: 'Public subnet ID to place the ECS instance into'
-        Type: 'String'
-        Default: 'subnet-e268a3ab'
+    Subnets:
+        Description: 'Which subnets the EC2 instances should be deployed to.'
+        Type: List<AWS::EC2::Subnet::Id>
 
-    PrivateSubnetZoneA:
-        Description: 'Private subnet ID to place the ECS instance into'
-        Type: 'String'
-        Default: 'subnet-e368a3aa'
-
-    PublicSubnetZoneB:
-        Description: 'Public subnet ID to place the ECS instance into'
-        Type: 'String'
-        Default: 'subnet-7ffc4c18'
-
-    PrivateSubnetZoneB:
-        Description: 'Private subnet ID to place the ECS instance into'
-        Type: 'String'
-        Default: 'subnet-70fc4c17'
-
-    SecurityGroup:
+    SecurityGroups:
         Description: 'Security Group to place around the ECS instances'
-        Type: 'String'
-        Default: 'sg-e6a7cc9e'
-
+        Type: List<AWS::EC2::SecurityGroup::Id>
 
 Mappings:
     # these AMIs change regularly.  Check http://docs.aws.amazon.com/AmazonECS/latest/developerguide/ecs-optimized_AMI.html
@@ -161,7 +143,7 @@ Resources:
             KeyName:
                 Ref: 'SshKeyName'
             SecurityGroups:
-                - !Ref 'SecurityGroup'
+                Ref: 'SecurityGroups'
             SpotPrice:
                 Ref: SpotPrice
             UserData:
@@ -214,8 +196,8 @@ Resources:
                 - Key: 'Freetext'
                   Value: 'Runs ECS Agent and Docker'
                   PropagateAtLaunch: true
-            VPCZoneIdentifier: [ !Ref 'PublicSubnetZoneA', !Ref 'PrivateSubnetZoneA', !Ref 'PublicSubnetZoneB', !Ref 'PrivateSubnetZoneB' ]
-
+            VPCZoneIdentifier:
+                Ref: 'Subnets'
 
 Outputs:
     Cluster:
