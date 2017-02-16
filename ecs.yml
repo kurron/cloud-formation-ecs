@@ -106,8 +106,6 @@ Resources:
                             - "logs:CreateLogStream"
                             - "logs:PutLogEvents"
                         Resource: "*"
-            # documentation suggests that providing a name will cause issues if updates are needed
-            RoleName: !Join [ '-', [ !Ref 'AWS::StackName', 'AmazonEC2ContainerServiceForEC2Role' ] ]
 
     # EC2 instances will run using this profile
     ECSInstanceProfile:
