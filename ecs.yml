@@ -121,7 +121,8 @@ Resources:
         Type: 'AWS::ECS::Cluster'
         Properties:
             # cluster names must adhere to this expression: ^[a-zA-Z0-9\-_]{1,255}$
-            ClusterName: !Join [ '-', [ !Ref 'AWS::StackName', 'Cluster' ] ]
+            ClusterName:
+                Ref: 'AWS::StackName'
 
     # auto scaling launch configuration for the ECS servers
     EcsLaunchConfiguration:
