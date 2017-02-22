@@ -1,15 +1,12 @@
 # Overview
 This project is a [CloudFormation](https://aws.amazon.com/cloudformation/) template
-that creates a new [ECS](https://aws.amazon.com/ecs/) cluster into an existing
+that inserts a new [ECS](https://aws.amazon.com/ecs/) cluster into an existing
 VPC.  Four EC2 instances are added to the cluster.  Two instances in each availability
-zone.
+zone.  The instances are auto-scaled and use spot pricing.
 
 ## Assets Produced
 1. ECS Cluster
-1. EC2 instance in the public subnet 10.0.10.0/24
-1. EC2 instance in the private subnet 10.0.20.0/24
-1. EC2 instance in the public subnet 10.0.30.0/24
-1. EC2 instance in the private subnet 10.0.40.0/24
+1. EC2 instances the provided subnets
 
 ## Tagging Strategy
 The following tags are applied to assets that allow tagging:
