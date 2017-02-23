@@ -4,8 +4,8 @@
 
 STACKNAME=${1:-Weapon-X-ECS}
 PROJECTNAME=${2:-Weapon-X}
-SECURITYGROUPS=${3:-sg-2d0d7955}
-SUBNETS=${4:-subnet-ac62a8e5,subnet-1ae3507d,subnet-af62a8e6,subnet-1be3507c}
+SECURITYGROUPS=${3:-sg-548bc62c}
+SUBNETS=${4:-subnet-09e73b40,subnet-76e73b3f,subnet-4164de26,subnet-4364de24}
 INSTANCETYPE=${5:-m4.large}
 SPOTPRICE=${6:-0.025}
 ENVIRONMENT=${7:-development}

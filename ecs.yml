@@ -124,6 +124,13 @@ Resources:
             ClusterName:
                 Ref: 'AWS::StackName'
 
+    CloudWatchLogsGroup:
+        Type: AWS::Logs::LogGroup
+        Properties:
+            LogGroupName:
+                Ref: 'AWS::StackName'
+            RetentionInDays: 7
+
     # auto scaling launch configuration for the ECS servers
     EcsLaunchConfiguration:
         Type: AWS::AutoScaling::LaunchConfiguration
@@ -203,3 +210,7 @@ Outputs:
         Description: 'EC2 Container Service Cluster ID'
         Value:
             Ref: 'Cluster'
+    LogGroup:
+        Description: 'The CloudWatch Logs log group that ECS services should send their logs to'
+        Value:
+            Ref: 'CloudWatchLogsGroup'
