@@ -167,6 +167,9 @@ Resources:
                     ROOT_DISK_ID=$( aws ec2 describe-volumes --region ${AWS::Region} --filter "Name=attachment.instance-id, Values=$AWS_INSTANCE_ID" --query "Volumes[].VolumeId" --out text )
                     echo "ROOT_DISK_ID=$ROOT_DISK_ID"
                     aws ec2 create-tags  --region ${AWS::Region} --resources $ROOT_DISK_ID --tags Key=Project,Value='${Project}'
+                    curl https://s3.dualstack.us-west-2.amazonaws.com/aws-xray-assets.us-west-2/xray-daemon/aws-xray-daemon-1.x.rpm -o /home/ec2-user/xray.rpm
+                    yum install -y /home/ec2-user/xray.rpm
+
 
     # auto scaling group for the ECS servers
     EcsAutoScalingGroup:
