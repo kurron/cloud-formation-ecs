@@ -105,6 +105,7 @@ Resources:
                             - "ecr:BatchGetImage"
                             - "logs:CreateLogStream"
                             - "logs:PutLogEvents"
+                            - "xray:*"
                         Resource: "*"
 
     # EC2 instances will run using this profile
